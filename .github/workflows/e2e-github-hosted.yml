@@ -1,0 +1,129 @@
+name: E2E · GitHub-hosted runners
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  ANDROID_API_LEVEL: '34'
+  ANDROID_TARGET: google_apis
+  ANDROID_PROFILE: pixel_7
+
+jobs:
+  static-checks:
+    name: Typecheck and list tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-project
+      - run: npm run typecheck
+      - run: npm run test:list
+
+  ios:
+    name: iOS · simulator (macos-latest)
+    needs: static-checks
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+        with:
+          platform: ios
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Boot iOS simulator
+        run: scripts/boot-ios-simulator.sh
+
+      - name: Check toolchain
+        run: npx mobilewright doctor --category ios
+
+      - name: Run iOS tests
+        run: npm run test:ios
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-ios
+          path: allure-results/
+          retention-days: 14
+
+      - name: Upload MobileWright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mobilewright-report-ios
+          path: mobilewright-report/
+          retention-days: 14
+
+  android:
+    name: Android · emulator (ubuntu-latest)
+    needs: static-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+        with:
+          platform: android
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # Hardware acceleration for the emulator, as recommended by android-emulator-runner.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android tests on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: x86_64
+          profile: ${{ env.ANDROID_PROFILE }}
+          disable-animations: true
+          script: |
+            npx mobilewright doctor --category android
+            npm run test:android
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-android
+          path: allure-results/
+          retention-days: 14
+
+      - name: Upload MobileWright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mobilewright-report-android
+          path: mobilewright-report/
+          retention-days: 14
+
+  allure-report:
+    name: Allure report
+    needs: [ios, android]
+    if: ${{ !cancelled() && (contains(needs.*.result, 'success') || contains(needs.*.result, 'failure')) }}
+    uses: ./.github/workflows/allure-report.yml

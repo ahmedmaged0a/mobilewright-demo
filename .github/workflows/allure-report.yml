@@ -1,0 +1,43 @@
+name: Allure report
+
+# Reusable: merges the `allure-results-*` artifacts of the calling run into one Allure report.
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: JSON runner label(s), e.g. '"ubuntu-latest"' or '["self-hosted", "macOS"]'.
+        type: string
+        default: '"ubuntu-latest"'
+      artifact-name:
+        description: Name of the uploaded report artifact.
+        type: string
+        default: allure-report
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: Generate Allure report
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+
+      - name: Download Allure results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: allure-results-*
+          path: allure-results
+          merge-multiple: true
+
+      - name: Generate report
+        run: npm run allure:generate
+
+      - name: Upload report
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: allure-report/
+          retention-days: 30

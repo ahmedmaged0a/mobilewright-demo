@@ -1,0 +1,34 @@
+name: Set up project
+description: Install Node.js and npm dependencies, and optionally download the demo app build for one platform.
+
+inputs:
+  platform:
+    description: "'ios' or 'android' to download that platform's demo app build; empty to skip."
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Cache demo app build
+      if: inputs.platform != ''
+      uses: actions/cache@v6
+      with:
+        path: apps/${{ inputs.platform }}
+        key: demo-app-${{ inputs.platform }}-${{ hashFiles('scripts/fetch-apps.sh') }}
+
+    - name: Download demo app build
+      if: inputs.platform != ''
+      shell: bash
+      env:
+        PLATFORM: ${{ inputs.platform }}
+      run: npm run apps:fetch -- "$PLATFORM"

@@ -1,0 +1,126 @@
+name: E2E · self-hosted Mac
+
+# Runs on a Mac you own (`runs-on: [self-hosted, macOS]`) against its local iOS Simulator and Android
+# emulator. push / pull_request runs are opt-in: set the repository variable SELF_HOSTED_E2E=true once
+# the runner is registered, so the jobs do not queue forever on repositories without one.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform(s) to test
+        type: choice
+        options: [both, ios, android]
+        default: both
+
+permissions:
+  contents: read
+
+# The devices on the Mac are shared, so runs are queued instead of running side by side.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  # Optional repository variables to pin devices on a Mac with several of them.
+  IOS_SIMULATOR: ${{ vars.IOS_SIMULATOR }}
+  IOS_DEVICE_NAME: ${{ vars.IOS_DEVICE_NAME }}
+  ANDROID_AVD: ${{ vars.ANDROID_AVD }}
+  ANDROID_DEVICE_NAME: ${{ vars.ANDROID_DEVICE_NAME }}
+  EMULATOR_HEADLESS: '1'
+
+jobs:
+  ios:
+    name: iOS · self-hosted Mac
+    # Opted in, not a pull request from a fork (untrusted code must not run on your Mac), platform selected.
+    if: >-
+      (github.event_name == 'workflow_dispatch' || vars.SELF_HOSTED_E2E == 'true')
+      && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'workflow_dispatch' || inputs.platform != 'android')
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+        with:
+          platform: ios
+
+      - name: Boot iOS simulator (reuses a booted one)
+        run: scripts/boot-ios-simulator.sh
+
+      - name: Check toolchain
+        run: npx mobilewright doctor --category ios
+
+      - name: Run iOS tests
+        run: npm run test:ios
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-ios
+          path: allure-results/
+          retention-days: 14
+
+      - name: Upload MobileWright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mobilewright-report-ios
+          path: mobilewright-report/
+          retention-days: 14
+
+  android:
+    name: Android · self-hosted Mac
+    # Runs after iOS so the two platforms do not compete for the Mac's CPU and memory.
+    needs: ios
+    if: >-
+      !cancelled()
+      && (github.event_name == 'workflow_dispatch' || vars.SELF_HOSTED_E2E == 'true')
+      && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'workflow_dispatch' || inputs.platform != 'ios')
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+        with:
+          platform: android
+
+      - name: Boot Android emulator (reuses a running one)
+        run: scripts/boot-android-emulator.sh
+
+      - name: Check toolchain
+        run: npx mobilewright doctor --category android
+
+      - name: Run Android tests
+        run: npm run test:android
+
+      - name: Upload Allure results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-android
+          path: allure-results/
+          retention-days: 14
+
+      - name: Upload MobileWright HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: mobilewright-report-android
+          path: mobilewright-report/
+          retention-days: 14
+
+  allure-report:
+    name: Allure report
+    needs: [ios, android]
+    if: ${{ !cancelled() && (contains(needs.*.result, 'success') || contains(needs.*.result, 'failure')) }}
+    uses: ./.github/workflows/allure-report.yml
+    with:
+      runs-on: '["self-hosted", "macOS"]'

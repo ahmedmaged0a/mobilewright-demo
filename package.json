@@ -1,0 +1,47 @@
+{
+  "name": "mobilewright-framework",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-platform (iOS + Android) MobileWright test framework for Sauce Labs My Demo App, with a Page Object Model and Allure reporting",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "doctor": "mobilewright doctor",
+    "devices": "mobilewright devices",
+    "inspect": "mobilewright inspect",
+    "apps:fetch": "bash scripts/fetch-apps.sh",
+    "test": "mobilewright test",
+    "test:ios": "mobilewright test --project=ios",
+    "test:android": "mobilewright test --project=android",
+    "test:list": "mobilewright test --list",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "postinstall": "node scripts/ensure-eslint-typescript.mjs",
+    "report:html": "mobilewright show-report",
+    "allure:generate": "node -e \"require('node:fs').rmSync('allure-report', { recursive: true, force: true })\" && allure generate",
+    "allure:open": "allure open allure-report"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@mobilewright/test": "0.0.60",
+    "@types/node": "22.20.4",
+    "@typescript-eslint/parser": "8.57.0",
+    "allure": "3.18.0",
+    "allure-js-commons": "3.12.2",
+    "allure-playwright": "3.12.2",
+    "eslint": "9.39.2",
+    "globals": "16.5.0",
+    "mobilewright": "0.0.60",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "typescript": "5.9.3"
+    },
+    "@typescript-eslint/parser": {
+      "typescript": "5.9.3"
+    }
+  }
+}
