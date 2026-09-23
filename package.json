@@ -28,7 +28,7 @@
     "lint": "eslint .",
     "postinstall": "node scripts/ensure-eslint-typescript.mjs",
     "report:html": "mobilewright show-report",
-    "allure:generate": "node -e \"require('node:fs').rmSync('allure-report', { recursive: true, force: true })\" && allure generate && node -e \"const fs=require('node:fs');const path=require('node:path');for (const name of fs.readdirSync('allure-report')) {if (name !== 'index.html') fs.rmSync(path.join('allure-report', name), { recursive: true, force: true });}\"",
+    "allure:generate": "node scripts/allure-generate.mjs",
     "allure:open": "allure open allure-report"
   },
   "devDependencies": {

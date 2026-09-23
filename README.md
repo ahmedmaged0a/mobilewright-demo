@@ -128,17 +128,21 @@ Project convenience scripts (same as above, plus extras):
 | `npm run typecheck` | TypeScript static check |
 | `npm run lint` | ESLint static analysis |
 | `npm run report:html` | → `mobilewright show-report` |
-| `npm run allure:generate` / `allure:open` | Build and open Allure report |
+| `npm run allure:generate` / `allure:open` | Rebuild or open the standalone Allure HTML. A finished test run writes it too |
 
 ### C. Generating / Opening Allure report:
 
-#### 1- Generate the report:
+`npx mobilewright test` and the `npm run test` scripts that execute tests write `allure-report/index.html` when the run finishes, including when tests fail. That folder contains only this file, and it opens via `file://`. `npm run test:list` does not build a report.
+
+#### 1- Generate the report manually (same command CI uses after merging results):
 
         npm run allure:generate
 
 #### 2- Open the report:
 
         npm run allure:open
+
+Or open `allure-report/index.html` in a browser.
 
 ### D. Using ESLint to make static analysis:
 
@@ -172,7 +176,8 @@ Project convenience scripts (same as above, plus extras):
 * Grouping page objects and navigation for sets of tests (`src/fixtures`)
 
 #### 6- Global Setup
-* Pre-required checks before the suite (`src/setup/global-setup.ts`)
+* Clears previous Allure results before the suite (`src/setup/global-setup.ts`)
+* Builds the single-file Allure HTML after the suite (`src/setup/allure-html-reporter.ts`)
 
 #### 7- Cross-platform projects
 * Single suite, `ios` and `android` projects in one config
@@ -205,6 +210,7 @@ Project convenience scripts (same as above, plus extras):
 #### 6- Allure report
 * Allure with analytics, epic/feature/story/severity annotations
 * Screenshots, view trees, and optional videos attached on failure / checkpoints
+* Standalone `allure-report/index.html` is written when a test run finishes
 
 #### 7- ESLint tool for static analysis
 * ESLint dependency for TypeScript static analysis
@@ -239,7 +245,8 @@ Web-only items from the Playwright twin project that do **not** apply here: Repo
 * Platform selection, Android resource ids, reporting, text/geometry helpers
 
 #### 7- src/setup/:
-* `global-setup.ts` for suite pre-checks
+* `global-setup.ts` clears Allure results before a run
+* `allure-html-reporter.ts` builds the single-file report after a run
 
 #### 8- apps/:
 * Downloaded APK / iOS simulator zip (git-ignored; created by `npm run apps:fetch`)
@@ -248,7 +255,7 @@ Web-only items from the Playwright twin project that do **not** apply here: Repo
 * MobileWright HTML report output
 
 #### 10- allure-results/ / allure-report/:
-* Raw Allure results and generated HTML report
+* Raw Allure results, and `index.html` written automatically after a test run
 
 #### 11- test-results/:
 * Screenshots, videos, traces, and other run artifacts
@@ -257,7 +264,7 @@ Web-only items from the Playwright twin project that do **not** apply here: Repo
 * Installed libraries and modules
 
 #### 13- scripts/:
-* `fetch-apps.sh`, `boot-android-emulator.sh`, `boot-ios-simulator.sh`
+* `fetch-apps.sh`, `boot-android-emulator.sh`, `boot-ios-simulator.sh`, `allure-generate.mjs`
 
 #### 14- docs/:
 * `PLAN.md` — architecture and design record
@@ -265,7 +272,7 @@ Web-only items from the Playwright twin project that do **not** apply here: Repo
 ### B. Project configuration files:
 
 #### 1- mobilewright.config.ts:
-* Platform projects, timeouts, reporters, workers, global setup, device/app options
+* Platform projects, timeouts, reporters, workers, global setup, Allure HTML after the run, device/app options
 
 #### 2- package.json:
 * Project properties, scripts, dependencies
@@ -331,12 +338,15 @@ mobilewright-framework/
 │   │   └── geometry.ts
 │   │
 │   └── setup/
-│       └── global-setup.ts
+│       ├── global-setup.ts
+│       ├── global-teardown.ts
+│       └── allure-html-reporter.ts
 │
 ├── scripts/
 │   ├── fetch-apps.sh
 │   ├── boot-android-emulator.sh
-│   └── boot-ios-simulator.sh
+│   ├── boot-ios-simulator.sh
+│   └── allure-generate.mjs
 │
 ├── docs/
 │   └── PLAN.md
@@ -397,9 +407,9 @@ mobilewright-framework/
    │ Screenshots     │ View tree        │ Optional video  │
    └─────────────────┴──────────────────┴─────────────────┘
    ↓
-   ┌─────────────────┬──────────────────┐
-   │ MobileWright HTML│ Allure Report    │
-   └─────────────────┴──────────────────┘
+   ┌──────────────────┬──────────────────────────┐
+   │ MobileWright HTML│ allure-report/index.html │
+   └──────────────────┴──────────────────────────┘
 ```
 
 ### **Page Object Model (POM) Structure:**

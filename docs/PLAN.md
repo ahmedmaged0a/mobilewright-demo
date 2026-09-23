@@ -204,11 +204,11 @@ login screen; nothing secret is stored.
 | Video | Opt-in with `MW_VIDEO=retain-on-failure` (MobileWright records through mobilecli) |
 | Metadata | `allure-js-commons`: `epic`, `feature`, `story`, `severity`, `owner`, `tags`; `platform` label from the fixture |
 | Environment | `environmentInfo` in reporter options (OS, Node, MobileWright version, CI run URL) |
-| Report | Allure 3 CLI. `allurerc.ts` defines report name, output folder, one Allure *environment* per platform, and Awesome `singleFile` so `allure-report/index.html` is a standalone HTML file |
+| Report | Allure 3 CLI. `allurerc.ts` defines report name, output folder, one Allure *environment* per platform, and Awesome `singleFile`. `scripts/allure-generate.mjs` then keeps only `allure-report/index.html`, a standalone file that opens via `file://` |
 
-Commands: `npm run allure:generate` builds `allure-report/`,
-`npm run allure:open` serves it. CI generates one merged report from the
-iOS and Android result folders and uploads it as an artifact.
+A finished `mobilewright test` (pass or fail) writes that file. `npm run test:list` does not. `npm run allure:generate` rebuilds it on demand, and `npm run allure:open` serves it. CI still runs `npm run allure:generate` after merging the iOS and Android `allure-results` artifacts, and uploads `allure-report/index.html`. Platform jobs may also produce a local copy; they upload `allure-results/`, not that HTML.
+
+The hook is a reporter `onExit` (`src/setup/allure-html-reporter.ts`), not `globalTeardown`. Playwright runs `globalTeardown` before reporters' `onEnd`, which is when `allure-playwright` writes environment info, categories, and not-started skipped tests. The IDE test server also runs `globalTeardown` only when the server stops, not after each run. `onExit` runs after that flush for `npx mobilewright test`, `npm run test:*`, and a long-lived runner, and it calls the same `npm run allure:generate` command. It skips `--list` (Playwright still loads reporters, and a list pass would otherwise rebuild from tests that did not run). It also skips the build when the Allure reporter is absent or `allure-results` has no `*-result.json`, so an empty run does not delete a previous `index.html`.
 
 ## 6. CI design
 

@@ -93,6 +93,7 @@ export default defineConfig({
         environmentInfo: allureEnvironmentInfo(),
       },
     ],
+    ['./src/setup/allure-html-reporter.ts'],
   ],
   projects: [
     { name: 'ios', use: projectUse('ios') },
