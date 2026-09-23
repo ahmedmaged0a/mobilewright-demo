@@ -14,19 +14,31 @@ test.describe('Catalog', { annotation: [allure.epic('Shopping'), allure.feature(
     },
   );
 
-  for (const product of Object.values(products)) {
-    test(
-      `Check that ${product.label} details are shown when the product is opened`,
-      {
-        tag: ['@ui', '@regression'],
-        annotation: [allure.story('View product details'), allure.severity(Severity.CRITICAL)],
-      },
-      async ({ catalogPage }) => {
-        const details = await catalogPage.openProduct(product);
+  test(
+    'Check that backpack details are shown when the product is opened',
+    {
+      tag: ['@ui', '@regression'],
+      annotation: [allure.story('View product details'), allure.severity(Severity.CRITICAL)],
+    },
+    async ({ catalogPage }) => {
+      const details = await catalogPage.openProduct(products.backpack);
 
-        await details.expectProductVisible(product);
-        await details.expectPrice(product.price);
-      },
-    );
-  }
+      await details.expectProductVisible(products.backpack);
+      await details.expectPrice(products.backpack.price);
+    },
+  );
+
+  test(
+    'Check that companion product details are shown when the product is opened',
+    {
+      tag: ['@ui', '@regression'],
+      annotation: [allure.story('View product details'), allure.severity(Severity.CRITICAL)],
+    },
+    async ({ catalogPage }) => {
+      const details = await catalogPage.openProduct(products.companion);
+
+      await details.expectProductVisible(products.companion);
+      await details.expectPrice(products.companion.price);
+    },
+  );
 });
