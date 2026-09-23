@@ -39,7 +39,14 @@ export class NavigationComponent extends BaseComponent {
       } else {
         await this.screen.getByTestId('Catalog-tab-item').tap({ timeout: NavigationComponent.screenTimeout });
       }
-      return new CatalogPage(this.screen, this.platform).waitUntilLoaded();
+      const catalog = await new CatalogPage(this.screen, this.platform).waitUntilLoaded();
+      if (this.platform === 'android') {
+        // Recycled lists keep scroll offset after returning from details — reset to the top.
+        for (let i = 0; i < 3; i += 1) {
+          await this.screen.swipe('down', { duration: 300 });
+        }
+      }
+      return catalog;
     });
   }
 

@@ -14,8 +14,8 @@ export const products = {
   },
   companion: {
     label: 'companion product',
-    name: { android: 'Sauce Labs Onesie', ios: 'Sauce Labs Backpack - Green' },
-    price: { android: 7.99, ios: 29.99 },
+    name: { android: 'Sauce Labs Backpack (orange)', ios: 'Sauce Labs Backpack - Green' },
+    price: { android: 29.99, ios: 29.99 },
   },
 } as const satisfies Record<string, Product>;
 

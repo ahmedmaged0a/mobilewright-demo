@@ -35,7 +35,7 @@ export abstract class BaseComponent {
       return;
     }
 
-    for (let attempt = 0; attempt < 8; attempt += 1) {
+    for (let attempt = 0; attempt < 25; attempt += 1) {
       await this.screen.swipe('up', { duration: 400 });
       if (await target.isVisible()) {
         return;

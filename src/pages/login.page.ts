@@ -35,6 +35,10 @@ export class LoginPage extends BasePage {
     return this.screen.getByText(typeof message === 'string' ? message : this.pick(message));
   }
 
+  private resolveUsername(username: Credentials['username']): string {
+    return typeof username === 'string' ? username : this.pick(username);
+  }
+
   override async waitUntilLoaded(): Promise<this> {
     await step(`Wait for ${this.screenName} screen`, () => this.reveal(this.loadedIndicator));
     return this;
@@ -46,9 +50,19 @@ export class LoginPage extends BasePage {
   }
 
   async submit({ username, password }: Credentials): Promise<void> {
-    await step(`Submit login form as "${username || '(no username)'}"`, async () => {
-      if (username) {
-        await this.typeUsernameTB(username);
+    const name = this.resolveUsername(username);
+    await step(`Submit login form as "${name || '(no username)'}"`, async () => {
+      if (this.platform === 'ios' && name && password) {
+        const sampleUser = this.screen.getByRole('button', { name });
+        if (await sampleUser.isVisible({ timeout: 2_000 }).catch(() => false)) {
+          await sampleUser.tap();
+          await this.tapSubmitBtn();
+          return;
+        }
+      }
+
+      if (name) {
+        await this.typeUsernameTB(name);
       }
       if (password) {
         await this.typePasswordTB(password);

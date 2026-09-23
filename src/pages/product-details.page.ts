@@ -40,10 +40,16 @@ export class ProductDetailsPage extends BasePage {
   }
 
   async tapAddToCartBtn(): Promise<void> {
+    await this.reveal(this.addToCart_btn);
+    await expect(this.addToCart_btn).toBeVisible({ timeout: 10_000 });
     await this.addToCart_btn.tap();
   }
 
   async addToCart(): Promise<void> {
-    await step('Add product to cart', () => this.tapAddToCartBtn());
+    await step('Add product to cart', async () => {
+      await this.tapAddToCartBtn();
+      // Let the cart badge update before the next navigation (Android drops rapid taps otherwise).
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
   }
 }

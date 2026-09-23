@@ -1,12 +1,15 @@
 import type { PerPlatform } from '../helpers/platform.ts';
 
 export interface Credentials {
-  readonly username: string;
+  readonly username: string | PerPlatform<string>;
   readonly password: string;
 }
 
 export const users = {
-  standard: { username: 'bod@example.com', password: '10203040' },
+  standard: {
+    username: { android: 'bod@example.com', ios: 'bob@example.com' },
+    password: '10203040',
+  },
   lockedOut: { username: 'alice@example.com', password: '10203040' },
 } as const satisfies Record<string, Credentials>;
 

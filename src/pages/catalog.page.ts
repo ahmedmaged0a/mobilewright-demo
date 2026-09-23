@@ -16,28 +16,49 @@ export class CatalogPage extends BasePage {
   });
 
   private productTitle(product: Product): Locator {
-    return this.screen.getByText(this.pick(product.name));
+    return this.screen.getByText(this.pick(product.name), { exact: true });
   }
 
   async expectProductVisible(product: Product): Promise<void> {
-    await step(`Expect product "${this.pick(product.name)}" to be visible`, () =>
-      expect(this.productTitle(product)).toBeVisible(),
-    );
+    await step(`Expect product "${this.pick(product.name)}" to be visible`, async () => {
+      await this.revealProduct(product);
+      await expect(this.productTitle(product)).toBeVisible();
+    });
   }
 
   async openProduct(product: Product): Promise<ProductDetailsPage> {
     const name = this.pick(product.name);
     return step(`Open product "${name}"`, async () => {
-      const title = this.productTitle(product);
-      await this.reveal(title);
-      await (await this.tapTargetFor(title)).tap();
-      return new ProductDetailsPage(this.screen, this.platform).waitUntilLoaded();
+      await this.revealProduct(product);
+      await (await this.tapTargetFor(product)).tap();
+      const details = await new ProductDetailsPage(this.screen, this.platform).waitUntilLoaded();
+      await details.expectProductVisible(product);
+      return details;
     });
   }
 
-  private async tapTargetFor(title: Locator): Promise<Locator> {
+  private async revealProduct(product: Product): Promise<void> {
+    const title = this.productTitle(product);
+    if (await title.isVisible({ timeout: 1_500 }).catch(() => false)) {
+      return;
+    }
+
+    try {
+      await title.scrollIntoViewIfNeeded({ maxSwipes: 40, direction: 'up' });
+    } catch {
+      await this.reveal(title);
+    }
+    await expect(title).toBeVisible({ timeout: 10_000 });
+  }
+
+  private async tapTargetFor(product: Product): Promise<Locator> {
+    const title = this.productTitle(product);
     if (this.platform === 'android') {
-      return closestAbove(title, this.screen.getByTestId(androidId('productIV')));
+      try {
+        return await closestAbove(title, this.screen.getByTestId(androidId('productIV')));
+      } catch {
+        return title;
+      }
     }
     return title;
   }

@@ -45,10 +45,11 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
     },
     async ({ catalogPage, navigation }) => {
       const basket = [products.backpack, products.companion];
+      let catalog = catalogPage;
       for (const product of basket) {
-        const details = await catalogPage.openProduct(product);
+        const details = await catalog.openProduct(product);
         await details.addToCart();
-        await navigation.openCatalog();
+        catalog = await navigation.openCatalog();
       }
 
       const cart = await navigation.openCart();
