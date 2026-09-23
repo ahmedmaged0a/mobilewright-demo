@@ -13,4 +13,12 @@ export default defineConfig({
     ios: { name: 'iOS', matcher: isPlatform('ios') },
     android: { name: 'Android', matcher: isPlatform('android') },
   },
+  plugins: {
+    awesome: {
+      options: {
+        singleFile: true,
+        reportName: 'My Demo App · MobileWright',
+      },
+    },
+  },
 });

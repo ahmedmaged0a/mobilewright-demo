@@ -3,6 +3,12 @@ set -euo pipefail
 
 requested="${IOS_SIMULATOR:-}"
 
+# Prefer the hardware keyboard so the software keyboard does not cover Login on CI.
+osascript -e 'quit app "Simulator"' >/dev/null 2>&1 || true
+sleep 1
+defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool true
+
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOBILECLI="${ROOT_DIR}/node_modules/@mobilenext/mobilecli-darwin-arm64/mobilecli-darwin-arm64"
 

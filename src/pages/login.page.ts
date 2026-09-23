@@ -2,6 +2,7 @@ import { expect } from '@mobilewright/test';
 import type { Locator } from 'mobilewright';
 import type { Credentials } from '../data/users.ts';
 import { androidId } from '../helpers/android.ts';
+import { dismissIOSSoftwareKeyboard } from '../helpers/ios-keyboard.ts';
 import type { PerPlatform } from '../helpers/platform.ts';
 import { step } from '../helpers/reporting.ts';
 import { BasePage } from './base.page.ts';
@@ -66,6 +67,9 @@ export class LoginPage extends BasePage {
 
   async tapSubmitBtn(): Promise<void> {
     await this.reveal(this.submit_btn);
+    if (this.platform === 'ios') {
+      await dismissIOSSoftwareKeyboard();
+    }
     await this.submit_btn.tap();
   }
 

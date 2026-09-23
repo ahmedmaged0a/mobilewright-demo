@@ -111,7 +111,7 @@ Common scripts:
 | `npm run typecheck` | TypeScript static check |
 | `npm run lint` | ESLint static analysis |
 | `npm run report:html` | Open MobileWright HTML report |
-| `npm run allure:generate` / `allure:open` | Build and open Allure report |
+| `npm run allure:generate` / `allure:open` | Build and open Allure report (single `allure-report/index.html`) |
 
 ### C. Generating / Opening Allure report:
 

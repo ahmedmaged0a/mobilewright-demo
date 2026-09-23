@@ -204,7 +204,7 @@ login screen; nothing secret is stored.
 | Video | Opt-in with `MW_VIDEO=retain-on-failure` (MobileWright records through mobilecli) |
 | Metadata | `allure-js-commons`: `epic`, `feature`, `story`, `severity`, `owner`, `tags`; `platform` label from the fixture |
 | Environment | `environmentInfo` in reporter options (OS, Node, MobileWright version, CI run URL) |
-| Report | Allure 3 CLI. `allurerc.mjs` defines report name, output folder, and one Allure *environment* per platform |
+| Report | Allure 3 CLI. `allurerc.ts` defines report name, output folder, one Allure *environment* per platform, and Awesome `singleFile` so `allure-report/index.html` is a standalone HTML file |
 
 Commands: `npm run allure:generate` builds `allure-report/`,
 `npm run allure:open` serves it. CI generates one merged report from the
@@ -267,8 +267,8 @@ x86_64 image, Xcode from the runner image) are set once via workflow `env`.
 | Locators drift when the demo app updates | App versions pinned in `fetch-apps.sh`; locators isolated in page classes |
 | iOS dump omits unlabeled containers | Only identifiers and labelled elements are targeted (see the locators guide) |
 | Slow emulators on shared CI | Generous `appLaunchTimeout`/`installTimeout`, 1 retry on CI, animations off |
-| Sauce Labs Bike Light | Not used. Android 2.2.0 never reaches a stable product-details screen for it (session drop or a 30s visibility timeout). iOS sorts it below the fold, where `scrollIntoViewIfNeeded` fails its full-viewport check. The companion product is the fleece jacket on Android (first catalog row) and the green backpack on iOS (same row as the black backpack) |
-| iOS login button id | The 2.2.2 storyboard gives the submit button the title `Login` and no `accessibilityIdentifier`. The screen is detected by the `Usernames` label; the button is `getByRole('button', { name: 'Login' })` |
+| Sauce Labs Bike Light | Not used. Android 2.2.0 never reaches a stable product-details screen for it (session drop or a 30s visibility timeout). iOS sorts it below the fold, where `scrollIntoViewIfNeeded` fails its full-viewport check. The companion product is the onesie on Android (catalog index with a real meta value; fleece jacket crashes Android 2.2.0) and the green backpack on iOS (same row as the black backpack) |
+| iOS login button id | The 2.2.2 storyboard gives the submit button the title `Login` and no `accessibilityIdentifier`. The screen is detected by the `Usernames` label; the button is `getByRole('button', { name: 'Login' }). CI boots the simulator with the hardware keyboard connected, and the login page toggles the software keyboard away before tapping Login so the tap is not swallowed |
 | iOS DeviceKit launch race | `autoAppLaunch` is off. The `appLaunched` fixture terminates and launches the app, and retries once when foreground detection times out |
 | Parallel jobs fighting over one Mac's devices | Self-hosted matrix runs legs sequentially by default |
 
