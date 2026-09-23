@@ -1,7 +1,6 @@
-import { products } from '../src/data/products.ts';
-import { expect, test } from '../src/fixtures/index.ts';
+import { products, totalOf } from '../src/data/products.ts';
+import { test } from '../src/fixtures/index.ts';
 import { allure, attachScreenshot, Severity } from '../src/helpers/reporting.ts';
-import { formatItemCount } from '../src/helpers/text.ts';
 
 test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Cart')] }, () => {
   test(
@@ -12,11 +11,11 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
     },
     async ({ navigation }) => {
       const cart = await navigation.openCart();
-      await expect(cart.emptyCart_lbl).toBeVisible();
+      await cart.expectEmpty();
 
       const catalog = await cart.goShopping();
 
-      await expect(catalog.productTitle(products.backpack)).toBeVisible();
+      await catalog.expectProductVisible(products.backpack);
     },
   );
 
@@ -32,8 +31,8 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
 
       const cart = await navigation.openCart();
 
-      await expect(cart.item(products.backpack)).toBeVisible();
-      await expect(cart.itemCount_lbl).toHaveText(formatItemCount(1));
+      await cart.expectItemVisible(products.backpack);
+      await cart.expectItemCount(1);
       await attachScreenshot(screen, 'cart-with-backpack');
     },
   );
@@ -45,7 +44,7 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
       annotation: [allure.story('Cart total'), allure.severity(Severity.CRITICAL)],
     },
     async ({ catalogPage, navigation }) => {
-      const basket = [products.backpack, products.bikeLight];
+      const basket = [products.backpack, products.companion];
       for (const product of basket) {
         const details = await catalogPage.openProduct(product);
         await details.addToCart();
@@ -53,10 +52,10 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
       }
 
       const cart = await navigation.openCart();
+      const expected = totalOf(basket);
 
-      await expect(cart.itemCount_lbl).toHaveText(formatItemCount(basket.length));
-      const expectedTotal = basket.reduce((sum, product) => sum + product.price, 0);
-      expect(await cart.totalPrice()).toBeCloseTo(expectedTotal, 2);
+      await cart.expectItemCount(basket.length);
+      await cart.expectTotalCloseTo(expected);
     },
   );
 
@@ -67,13 +66,13 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
       annotation: [allure.story('Remove from cart'), allure.severity(Severity.NORMAL)],
     },
     async ({ catalogPage, navigation }) => {
-      const details = await catalogPage.openProduct(products.bikeLight);
+      const details = await catalogPage.openProduct(products.companion);
       await details.addToCart();
       const cart = await navigation.openCart();
 
       await cart.removeFirstItem();
 
-      await expect(cart.emptyCart_lbl).toBeVisible();
+      await cart.expectEmpty();
     },
   );
 });

@@ -46,10 +46,10 @@ Facts from the MobileWright sources that shape the design:
   reporters such as `allure-playwright` plug in natively.
 - `--reporter` on the command line **replaces** the configured reporters, so
   the npm scripts never pass it.
-- The `device` fixture is test-scoped: before every test the app is terminated
-  and relaunched (`autoAppLaunch`), so each test starts from a fresh process.
-  Both demo apps keep cart and login state in memory, which gives test
-  isolation for free.
+- The `device` fixture is test-scoped. `autoAppLaunch` is off; the
+  `appLaunched` fixture terminates and relaunches the app before every test,
+  and retries once if iOS foreground detection times out. Both demo apps keep
+  cart and login state in memory, which gives test isolation for free.
 - Every locator action (`tap`, `fill`, ...) is already reported as a
   Playwright step, and the `screen` fixture attaches `screenshot-on-failure`
   (and `view-tree-on-failure` when `viewTree: 'on-failure'`). Allure picks all
@@ -168,8 +168,11 @@ Locator priority follows the MobileWright inspector:
 - Page methods are business actions (`addToCart()`, `loginAs(user)`) wrapped
   in Allure steps. Navigation methods return the next page object so specs
   can chain journeys.
-- Pages expose locators needed for assertions as read-only properties; specs
-  assert with MobileWright's auto-waiting `expect`.
+- Each page owns its locators, constructor wiring, action methods, and
+  assertion methods. Assertion methods call MobileWright's auto-waiting
+  `expect`. Specs call those methods (`expectProductVisible`,
+  `expectErrorVisible`, `expectEmpty`, `expectTotalCloseTo`, …) and do not
+  assert on locators themselves.
 - `NavigationComponent` hides header/drawer versus tab-bar navigation.
 
 ### Fixtures
@@ -250,8 +253,9 @@ x86_64 image, Xcode from the runner image) are set once via workflow `env`.
 - File names are kebab-case with a role suffix (`*.page.ts`,
   `*.component.ts`, `*.spec.ts`).
 - No sleeps: rely on auto-waiting locators and assertions.
-- Specs never touch raw locators or `platform`, except for explicitly
-  platform-scoped cases which use `test.skip(platform === ..., reason)`.
+- Specs never touch raw locators, `expect(...)`, or `platform`, except for
+  explicitly platform-scoped cases which use `test.skip(platform === ..., reason)`.
+  UI checks go through page assertion methods.
 - Each test is independent (fresh app process), so `fullyParallel` is safe
   when more than one device is available.
 
@@ -263,6 +267,9 @@ x86_64 image, Xcode from the runner image) are set once via workflow `env`.
 | Locators drift when the demo app updates | App versions pinned in `fetch-apps.sh`; locators isolated in page classes |
 | iOS dump omits unlabeled containers | Only identifiers and labelled elements are targeted (see the locators guide) |
 | Slow emulators on shared CI | Generous `appLaunchTimeout`/`installTimeout`, 1 retry on CI, animations off |
+| Sauce Labs Bike Light | Not used. Android 2.2.0 never reaches a stable product-details screen for it (session drop or a 30s visibility timeout). iOS sorts it below the fold, where `scrollIntoViewIfNeeded` fails its full-viewport check. The companion product is the fleece jacket on Android (first catalog row) and the green backpack on iOS (same row as the black backpack) |
+| iOS login button id | The 2.2.2 storyboard gives the submit button the title `Login` and no `accessibilityIdentifier`. The screen is detected by the `Usernames` label; the button is `getByRole('button', { name: 'Login' })` |
+| iOS DeviceKit launch race | `autoAppLaunch` is off. The `appLaunched` fixture terminates and launches the app, and retries once when foreground detection times out |
 | Parallel jobs fighting over one Mac's devices | Self-hosted matrix runs legs sequentially by default |
 
 ## 9. Delivery checklist

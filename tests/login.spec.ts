@@ -1,6 +1,6 @@
 import { products } from '../src/data/products.ts';
 import { lockedOutError, loginErrors, users } from '../src/data/users.ts';
-import { expect, test } from '../src/fixtures/index.ts';
+import { test } from '../src/fixtures/index.ts';
 import { allure, Severity } from '../src/helpers/reporting.ts';
 
 test.describe('Login', { annotation: [allure.epic('Account'), allure.feature('Login')] }, () => {
@@ -15,7 +15,7 @@ test.describe('Login', { annotation: [allure.epic('Account'), allure.feature('Lo
 
       const catalog = await login.loginAs(users.standard);
 
-      await expect(catalog.productTitle(products.backpack)).toBeVisible();
+      await catalog.expectProductVisible(products.backpack);
     },
   );
 
@@ -30,7 +30,7 @@ test.describe('Login', { annotation: [allure.epic('Account'), allure.feature('Lo
 
       await login.submit({ username: '', password: users.standard.password });
 
-      await expect(login.errorMessage(loginErrors.usernameRequired)).toBeVisible();
+      await login.expectErrorVisible(loginErrors.usernameRequired);
     },
   );
 
@@ -45,12 +45,11 @@ test.describe('Login', { annotation: [allure.epic('Account'), allure.feature('Lo
 
       await login.submit({ username: users.standard.username, password: '' });
 
-      await expect(login.errorMessage(loginErrors.passwordRequired)).toBeVisible();
+      await login.expectErrorVisible(loginErrors.passwordRequired);
     },
   );
 
   test.describe('locked-out account', () => {
-    // Evaluated before any device is allocated, so iOS runs skip without touching a simulator.
     test.skip(({ appPlatform }) => appPlatform === 'ios', 'The iOS build of My Demo App has no locked-out account');
 
     test(
@@ -64,7 +63,7 @@ test.describe('Login', { annotation: [allure.epic('Account'), allure.feature('Lo
 
         await login.submit(users.lockedOut);
 
-        await expect(login.errorMessage(lockedOutError)).toBeVisible();
+        await login.expectErrorVisible(lockedOutError);
       },
     );
   });

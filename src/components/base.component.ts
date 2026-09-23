@@ -3,9 +3,7 @@ import type { PerPlatform, Platform } from '../helpers/platform.ts';
 
 type LocatorFactory = (_screen: Screen) => Locator;
 
-/** Common base of pages and reusable UI components: knows the screen and the platform. */
 export abstract class BaseComponent {
-  /** Screen transitions on emulators and CI simulators take longer than a single action. */
   protected static readonly screenTimeout = 30_000;
 
   protected readonly screen: Screen;
@@ -16,13 +14,34 @@ export abstract class BaseComponent {
     this.platform = platform;
   }
 
-  /** Builds the locator for the current platform from per-platform definitions. */
   protected select(locators: PerPlatform<LocatorFactory>): Locator {
     return locators[this.platform](this.screen);
   }
 
-  /** Picks the current platform's variant of a value that differs between the builds. */
   protected pick<T>(values: PerPlatform<T>): T {
     return values[this.platform];
+  }
+
+  protected async reveal(target: Locator): Promise<void> {
+    if (await target.isVisible()) {
+      return;
+    }
+
+    const appeared = await target
+      .waitFor({ state: 'visible', timeout: 3_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (appeared) {
+      return;
+    }
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      await this.screen.swipe('up', { duration: 400 });
+      if (await target.isVisible()) {
+        return;
+      }
+    }
+
+    await target.waitFor({ state: 'visible', timeout: BaseComponent.screenTimeout });
   }
 }

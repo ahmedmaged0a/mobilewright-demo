@@ -1,3 +1,4 @@
+import { expect } from '@mobilewright/test';
 import type { Locator } from 'mobilewright';
 import type { Product } from '../data/products.ts';
 import { androidId } from '../helpers/android.ts';
@@ -14,21 +15,26 @@ export class CatalogPage extends BasePage {
     ios: (screen) => screen.getByTestId('Catalog-screen'),
   });
 
-  productTitle(product: Product): Locator {
+  private productTitle(product: Product): Locator {
     return this.screen.getByText(this.pick(product.name));
+  }
+
+  async expectProductVisible(product: Product): Promise<void> {
+    await step(`Expect product "${this.pick(product.name)}" to be visible`, () =>
+      expect(this.productTitle(product)).toBeVisible(),
+    );
   }
 
   async openProduct(product: Product): Promise<ProductDetailsPage> {
     const name = this.pick(product.name);
     return step(`Open product "${name}"`, async () => {
       const title = this.productTitle(product);
-      await title.scrollIntoViewIfNeeded();
+      await this.reveal(title);
       await (await this.tapTargetFor(title)).tap();
       return new ProductDetailsPage(this.screen, this.platform).waitUntilLoaded();
     });
   }
 
-  /** iOS opens a product from anywhere in its cell; Android only from the image above the title. */
   private async tapTargetFor(title: Locator): Promise<Locator> {
     if (this.platform === 'android') {
       return closestAbove(title, this.screen.getByTestId(androidId('productIV')));

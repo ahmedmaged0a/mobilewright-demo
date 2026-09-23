@@ -1,14 +1,13 @@
 import { existsSync } from 'node:fs';
 import { test as base, expect } from '@mobilewright/test';
 import * as allure from 'allure-js-commons';
-import { toArray } from 'mobilewright';
+import { toArray, type Device } from 'mobilewright';
 import { NavigationComponent } from '../components/navigation.component.ts';
 import { resolvePlatform, type Platform } from '../helpers/platform.ts';
 import { CatalogPage } from '../pages/catalog.page.ts';
 
 type VideoMode = 'off' | 'on' | 'retain-on-failure';
 
-/** `MW_VIDEO` opts into MobileWright's screen recording, which is off by default because it slows devices down. */
 function videoMode(): VideoMode {
   const value = process.env['MW_VIDEO']?.trim() || 'off';
   if (value === 'off' || value === 'on' || value === 'retain-on-failure') {
@@ -17,17 +16,37 @@ function videoMode(): VideoMode {
   throw new Error(`MW_VIDEO must be "off", "on" or "retain-on-failure" (got "${value}")`);
 }
 
+function foregroundTimeout(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('to be in foreground');
+}
+
+async function launchForTest(device: Device, bundleId: string): Promise<void> {
+  const once = async (): Promise<void> => {
+    await device.terminateApp(bundleId).catch(() => undefined);
+    await device.launchApp(bundleId);
+  };
+
+  try {
+    await once();
+  } catch (error) {
+    if (!foregroundTimeout(error)) {
+      throw error;
+    }
+    await once();
+  }
+}
+
 interface AppFixtures {
-  /** Platform of the running project, validated. */
   appPlatform: Platform;
   navigation: NavigationComponent;
-  /** The app's launch screen, already displayed. */
   catalogPage: CatalogPage;
 }
 
 interface AutomaticFixtures {
   appArtifactsPresent: void;
   allureContext: void;
+  appLaunched: void;
 }
 
 export const test = base.extend<AppFixtures & AutomaticFixtures>({
@@ -51,7 +70,6 @@ export const test = base.extend<AppFixtures & AutomaticFixtures>({
     async ({ platform }, use, testInfo) => {
       await allure.label('platform', resolvePlatform(platform));
       await use();
-      // MobileWright records the allocated device as `device.*` annotations during setup.
       for (const { type, description } of testInfo.annotations) {
         if (type.startsWith('device.') && description) {
           await allure.parameter(type, description, { excluded: true });
@@ -61,15 +79,25 @@ export const test = base.extend<AppFixtures & AutomaticFixtures>({
     { auto: true },
   ],
 
+  appLaunched: [
+    async ({ device, bundleId }, use) => {
+      if (bundleId) {
+        await launchForTest(device, bundleId);
+      }
+      await use();
+    },
+    { auto: true, timeout: 0 },
+  ],
+
   appPlatform: async ({ platform }, use) => {
     await use(resolvePlatform(platform));
   },
 
-  navigation: async ({ screen, appPlatform }, use) => {
+  navigation: async ({ screen, appPlatform, appLaunched: _appLaunched }, use) => {
     await use(new NavigationComponent(screen, appPlatform));
   },
 
-  catalogPage: async ({ screen, appPlatform }, use) => {
+  catalogPage: async ({ screen, appPlatform, appLaunched: _appLaunched }, use) => {
     await use(await new CatalogPage(screen, appPlatform).waitUntilLoaded());
   },
 });

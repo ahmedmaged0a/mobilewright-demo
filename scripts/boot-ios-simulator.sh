@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Boots an iPhone simulator and waits until it is ready. MobileWright never boots devices itself.
-#
-#   scripts/boot-ios-simulator.sh                           # reuse a booted iPhone, else newest runtime's first iPhone
-#   IOS_SIMULATOR="iPhone 16" scripts/boot-ios-simulator.sh  # exact simulator name
 set -euo pipefail
 
 requested="${IOS_SIMULATOR:-}"
@@ -29,7 +25,6 @@ if [[ -z "${requested}" ]] && xcrun simctl list devices booted | grep -qE '^\s+i
   exit 0
 fi
 
-# Picks from the newest iOS runtime first: `IOS_SIMULATOR` by exact name, otherwise the first iPhone.
 udid="$(xcrun simctl list devices available --json | node -e '
   const requested = process.argv[1];
   const { devices } = JSON.parse(require("fs").readFileSync(0, "utf8"));

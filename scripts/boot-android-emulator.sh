@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Starts an Android emulator and waits for boot to complete. MobileWright never boots devices itself.
-#
-#   scripts/boot-android-emulator.sh                             # reuse a running emulator, else the first AVD
-#   ANDROID_AVD=Pixel_8_API_35 scripts/boot-android-emulator.sh  # a specific AVD
-#   EMULATOR_HEADLESS=1 scripts/boot-android-emulator.sh         # no emulator window
 set -euo pipefail
 
 : "${ANDROID_HOME:?ANDROID_HOME must point at the Android SDK}"

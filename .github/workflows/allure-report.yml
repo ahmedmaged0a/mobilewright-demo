@@ -1,6 +1,5 @@
 name: Allure report
 
-# Reusable: merges the `allure-results-*` artifacts of the calling run into one Allure report.
 on:
   workflow_call:
     inputs:

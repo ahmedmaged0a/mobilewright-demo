@@ -2,12 +2,6 @@ import eslint from '@eslint/js';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 
-/**
- * Flat ESLint config.
- * Uses @typescript-eslint/parser so `.ts` files parse correctly.
- * The typescript-eslint *plugin* is omitted: it depends on TypeScript < 6 APIs while
- * this repo pins TypeScript 7 for `tsc`. Pair `npm run lint` with `npm run typecheck`.
- */
 export default [
   {
     ignores: [
