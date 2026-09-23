@@ -11,8 +11,8 @@ use it.
   Android** through MobileWright `projects` in a single config.
 - A **Page Object Model** that hides per-platform locator differences behind a
   single, intention-revealing API, so specs stay thin and shared.
-- **Allure** reporting with business-readable steps and failure evidence
-  (screenshot, accessibility tree, optional video).
+- **Allure** reporting with business-readable steps and evidence on every
+  test (screenshot, plus an accessibility tree on failure, optional video).
 - **GitHub Actions** on a self-hosted Mac (local simulators/emulators) and on
   GitHub-hosted runners.
 - Default execution target is a local simulator/emulator. Paid device clouds
@@ -51,9 +51,10 @@ Facts from the MobileWright sources that shape the design:
   and retries once if iOS foreground detection times out. Both demo apps keep
   cart and login state in memory, which gives test isolation for free.
 - Every locator action (`tap`, `fill`, ...) is already reported as a
-  Playwright step, and the `screen` fixture attaches `screenshot-on-failure`
-  (and `view-tree-on-failure` when `viewTree: 'on-failure'`). Allure picks all
-  of these up without extra code.
+  Playwright step. The `screen` fixture attaches `screenshot-on-failure`
+  (and `view-tree-on-failure` when `viewTree: 'on-failure'`). An automatic
+  fixture also attaches a PNG named `screenshot` after every test, pass or
+  fail. Allure picks all of these up without extra code.
 - `installApps` paths must be ZIP archives (APK, IPA, or a zipped `.app`).
   mobilecli's simulator installer only looks for a `.app` **at the root** of
   the ZIP.
@@ -184,6 +185,9 @@ Locator priority follows the MobileWright inspector:
   `platform` option.
 - An automatic `allureContext` fixture tags every test with `platform`,
   `device.*`, and host labels so results can be split by platform.
+- An automatic fixture attaches a PNG named `screenshot` after the test
+  body, pass or fail. A closed device session is ignored so teardown can
+  finish. `viewTree` stays `on-failure`.
 
 ### Test data
 
@@ -199,7 +203,8 @@ login screen; nothing secret is stored.
 | Reporter | `['allure-playwright', { resultsDir: 'allure-results', ... }]` in `mobilewright.config.ts`, next to `list` and `html` |
 | Business steps | `step()` helper around `test.step(..., { box: true })`. Rendered by both the MobileWright HTML report and Allure |
 | Low-level steps | Automatic: MobileWright reports every locator action as a nested step |
-| Failure evidence | Automatic: `screenshot-on-failure` (MobileWright), `view-tree-on-failure` via `viewTree: 'on-failure'` |
+| Screenshot | Automatic `screenshot` after every test, pass or fail (`src/fixtures`). Failures also get MobileWright's `screenshot-on-failure` |
+| View tree | `view-tree-on-failure` via `viewTree: 'on-failure'` |
 | Checkpoint evidence | `attachScreenshot(screen, name)` helper for key states (e.g. filled cart) |
 | Video | Opt-in with `MW_VIDEO=retain-on-failure` (MobileWright records through mobilecli) |
 | Metadata | `allure-js-commons`: `epic`, `feature`, `story`, `severity`, `owner`, `tags`; `platform` label from the fixture |

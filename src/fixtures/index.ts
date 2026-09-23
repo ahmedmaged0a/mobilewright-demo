@@ -47,6 +47,7 @@ interface AutomaticFixtures {
   appArtifactsPresent: void;
   allureContext: void;
   appLaunched: void;
+  screenshotAttached: void;
 }
 
 export const test = base.extend<AppFixtures & AutomaticFixtures>({
@@ -87,6 +88,17 @@ export const test = base.extend<AppFixtures & AutomaticFixtures>({
       await use();
     },
     { auto: true, timeout: 0 },
+  ],
+
+  screenshotAttached: [
+    async ({ screen }, use, testInfo) => {
+      await use();
+      const body = await screen.screenshot().catch(() => undefined);
+      if (body) {
+        await testInfo.attach('screenshot', { body, contentType: 'image/png' });
+      }
+    },
+    { auto: true },
   ],
 
   appPlatform: async ({ platform }, use) => {

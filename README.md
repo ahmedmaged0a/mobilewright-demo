@@ -161,7 +161,8 @@ Or open `allure-report/index.html` in a browser.
 * App launch and install timeouts
 
 #### 2- Screenshots, video recording and view-tree preparation
-* Screenshot on failure (built-in)
+* PNG `screenshot` after every test, pass or fail (`src/fixtures`)
+* Built-in `screenshot-on-failure` when a test fails
 * Accessibility view tree on failure (`viewTree: 'on-failure'`)
 * Optional video via `MW_VIDEO=on` or `retain-on-failure`
 
@@ -209,7 +210,7 @@ Or open `allure-report/index.html` in a browser.
 
 #### 6- Allure report
 * Allure with analytics, epic/feature/story/severity annotations
-* Screenshots, view trees, and optional videos attached on failure / checkpoints
+* PNG screenshot after every test (pass and fail); view tree on failure; optional video; named checkpoints
 * Standalone `allure-report/index.html` is written when a test run finishes
 
 #### 7- ESLint tool for static analysis
@@ -236,7 +237,7 @@ Web-only items from the Playwright twin project that do **not** apply here: Repo
 * Shared UI (e.g. navigation header / tab bar)
 
 #### 4- src/fixtures/:
-* Test fixtures that inject page objects and Allure context
+* Test fixtures that inject page objects, Allure context, and a screenshot after every test
 
 #### 5- src/data/:
 * Typed test data (products, users)
