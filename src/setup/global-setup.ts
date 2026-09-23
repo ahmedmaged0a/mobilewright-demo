@@ -1,11 +1,9 @@
 import { rmSync } from 'node:fs';
 
-/** The part of Playwright's resolved `FullConfig` this setup reads. */
 interface ResolvedConfig {
   readonly reporter: ReadonlyArray<readonly [string, unknown?]>;
 }
 
-/** Playwright resolves reporter names to module paths, e.g. `.../node_modules/allure-playwright/dist/...`. */
 const ALLURE_REPORTER = /(^|[\\/])allure-playwright([\\/]|$)/;
 
 function allureResultsDir({ reporter }: ResolvedConfig): string | undefined {
@@ -16,7 +14,6 @@ function allureResultsDir({ reporter }: ResolvedConfig): string | undefined {
   return undefined;
 }
 
-/** allure-playwright appends to its results folder, so every run starts from a clean one. */
 export default function globalSetup(config: ResolvedConfig): void {
   const resultsDir = allureResultsDir(config);
   if (resultsDir) {

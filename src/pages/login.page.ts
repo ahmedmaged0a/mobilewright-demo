@@ -1,6 +1,8 @@
+import { expect } from '@mobilewright/test';
 import type { Locator } from 'mobilewright';
 import type { Credentials } from '../data/users.ts';
 import { androidId } from '../helpers/android.ts';
+import { dismissIOSSoftwareKeyboard } from '../helpers/ios-keyboard.ts';
 import type { PerPlatform } from '../helpers/platform.ts';
 import { step } from '../helpers/reporting.ts';
 import { BasePage } from './base.page.ts';
@@ -11,12 +13,14 @@ export class LoginPage extends BasePage {
 
   private readonly submit_btn = this.select({
     android: (screen) => screen.getByTestId(androidId('loginBtn')),
-    ios: (screen) => screen.getByTestId('Login Button'),
+    ios: (screen) => screen.getByRole('button', { name: 'Login' }),
   });
 
-  protected readonly loadedIndicator = this.submit_btn;
+  protected readonly loadedIndicator = this.select({
+    android: (screen) => screen.getByTestId(androidId('loginBtn')),
+    ios: (screen) => screen.getByText('Usernames'),
+  });
 
-  // The iOS text fields carry no identifier or placeholder, so they are addressed by position.
   private readonly username_tb = this.select({
     android: (screen) => screen.getByTestId(androidId('nameET')),
     ios: (screen) => screen.getByRole('textfield').first(),
@@ -27,16 +31,38 @@ export class LoginPage extends BasePage {
     ios: (screen) => screen.getByRole('textfield').nth(1),
   });
 
-  /** Android shows validation errors inline, iOS in an alert; both render the message as text. */
-  errorMessage(message: PerPlatform<string> | string): Locator {
+  private errorMessage(message: PerPlatform<string> | string): Locator {
     return this.screen.getByText(typeof message === 'string' ? message : this.pick(message));
   }
 
-  /** Fills the non-empty fields and submits, without expecting any particular outcome. */
+  private resolveUsername(username: Credentials['username']): string {
+    return typeof username === 'string' ? username : this.pick(username);
+  }
+
+  override async waitUntilLoaded(): Promise<this> {
+    await step(`Wait for ${this.screenName} screen`, () => this.reveal(this.loadedIndicator));
+    return this;
+  }
+
+  async expectErrorVisible(message: PerPlatform<string> | string): Promise<void> {
+    const text = typeof message === 'string' ? message : this.pick(message);
+    await step(`Expect login error "${text}"`, () => expect(this.errorMessage(message)).toBeVisible());
+  }
+
   async submit({ username, password }: Credentials): Promise<void> {
-    await step(`Submit login form as "${username || '(no username)'}"`, async () => {
-      if (username) {
-        await this.typeUsernameTB(username);
+    const name = this.resolveUsername(username);
+    await step(`Submit login form as "${name || '(no username)'}"`, async () => {
+      if (this.platform === 'ios' && name && password) {
+        const sampleUser = this.screen.getByRole('button', { name });
+        if (await sampleUser.isVisible({ timeout: 2_000 }).catch(() => false)) {
+          await sampleUser.tap();
+          await this.tapSubmitBtn();
+          return;
+        }
+      }
+
+      if (name) {
+        await this.typeUsernameTB(name);
       }
       if (password) {
         await this.typePasswordTB(password);
@@ -54,6 +80,10 @@ export class LoginPage extends BasePage {
   }
 
   async tapSubmitBtn(): Promise<void> {
+    await this.reveal(this.submit_btn);
+    if (this.platform === 'ios') {
+      await dismissIOSSoftwareKeyboard();
+    }
     await this.submit_btn.tap();
   }
 

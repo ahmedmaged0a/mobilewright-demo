@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# Downloads the Sauce Labs My Demo App builds the suite installs (see src/config/apps.ts).
-#
-#   scripts/fetch-apps.sh            # android and ios
-#   scripts/fetch-apps.sh android    # one platform
-#   FORCE=1 scripts/fetch-apps.sh    # re-download existing builds
 set -euo pipefail
 
 ANDROID_VERSION="2.2.0"
@@ -36,8 +31,6 @@ fetch_android() {
   echo "✓ ${ANDROID_APP}"
 }
 
-# The release ships Payload/My Demo App.app, but mobilecli's simulator installer expects the
-# .app at the root of the archive, so the bundle is re-zipped.
 fetch_ios() {
   needs_download "${IOS_APP}" || return 0
   local work_dir

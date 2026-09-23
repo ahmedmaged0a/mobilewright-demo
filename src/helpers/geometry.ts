@@ -6,11 +6,6 @@ function overlapsHorizontally(a: Box, b: Box): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width;
 }
 
-/**
- * Returns the match of `candidates` that sits directly above `anchor` in the same column.
- * Used when the tappable element (e.g. a product image) is a sibling of the element that
- * identifies it (e.g. the product title) rather than its ancestor.
- */
 export async function closestAbove(anchor: Locator, candidates: Locator): Promise<Locator> {
   const anchorBox = await anchor.boundingBox();
   let closest: { locator: Locator; gap: number } | undefined;

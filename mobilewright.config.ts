@@ -1,5 +1,3 @@
-// Keep this file free of imports from local modules: MobileWright's fixtures re-import it with a
-// native `import()` in every worker, and on Node < 22.15 relative imports from it fail to resolve.
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import { resolve } from 'node:path';
@@ -12,7 +10,6 @@ if (existsSync('.env')) {
 type Platform = 'ios' | 'android';
 type DeviceType = NonNullable<MobilewrightUseOptions['deviceType']>;
 
-/** Sauce Labs My Demo App. Keep versions in sync with `scripts/fetch-apps.sh`. */
 const demoApp = {
   android: {
     version: '2.2.0',
@@ -41,12 +38,10 @@ function readDeviceType(name: string): DeviceType | undefined {
 const isCI = Boolean(readEnv('CI'));
 const skipAppInstall = ['1', 'true'].includes(readEnv('SKIP_APP_INSTALL') ?? '');
 
-/** Device and build selection per platform, overridable with `IOS_*` / `ANDROID_*` variables. */
 function projectUse(platform: Platform): MobilewrightUseOptions {
   const prefix = platform.toUpperCase();
   const appPath = readEnv(`${prefix}_APP_PATH`) ?? demoApp[platform].artifact;
   const deviceName = readEnv(`${prefix}_DEVICE_NAME`);
-  // The default iOS build is a simulator build, so real iPhones must be opted into explicitly.
   const deviceType = readDeviceType(`${prefix}_DEVICE_TYPE`) ?? (platform === 'ios' ? 'simulator' : undefined);
   return {
     platform,
@@ -70,6 +65,7 @@ function allureEnvironmentInfo(): Record<string, string> {
 }
 
 export default defineConfig({
+  autoAppLaunch: false,
   testDir: './tests',
   outputDir: './test-results',
   timeout: 120_000,
@@ -91,7 +87,6 @@ export default defineConfig({
     [
       'allure-playwright',
       {
-        // Keep in sync with `resultsDir` in allurerc.ts.
         resultsDir: 'allure-results',
         detail: false,
         suiteTitle: true,

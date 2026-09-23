@@ -1,6 +1,5 @@
 import { defineConfig } from 'allure';
 
-/** The `platform` label is added to every result by the `allureContext` fixture. */
 function isPlatform(platform: string) {
   return ({ labels }: { labels: { name: string; value?: string }[] }) =>
     labels.some(({ name, value }) => name === 'platform' && value === platform);
@@ -13,5 +12,13 @@ export default defineConfig({
   environments: {
     ios: { name: 'iOS', matcher: isPlatform('ios') },
     android: { name: 'Android', matcher: isPlatform('android') },
+  },
+  plugins: {
+    awesome: {
+      options: {
+        singleFile: true,
+        reportName: 'My Demo App · MobileWright',
+      },
+    },
   },
 });

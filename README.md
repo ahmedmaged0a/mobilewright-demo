@@ -42,8 +42,8 @@ Verify the host before installing apps or running tests:
 
 #### 1- Clone the project
 
-        git clone https://github.com/ahmedmaged0a/mobilewright.git
-        cd mobilewright
+        git clone https://github.com/ahmedmaged0a/mobilewright-demo.git
+        cd mobilewright-demo
 
 #### 2- Run the below command to install the required dependencies
 
@@ -111,7 +111,7 @@ Common scripts:
 | `npm run typecheck` | TypeScript static check |
 | `npm run lint` | ESLint static analysis |
 | `npm run report:html` | Open MobileWright HTML report |
-| `npm run allure:generate` / `allure:open` | Build and open Allure report |
+| `npm run allure:generate` / `allure:open` | Build and open Allure report (single `allure-report/index.html`) |
 
 ### C. Generating / Opening Allure report:
 
@@ -169,7 +169,8 @@ Common scripts:
 ### B. Extra features:
 
 #### 1- Page Object Model design pattern
-* Separating screens into modules to enhance readability and maintainability
+* Each page class holds locators, a constructor, action methods, and assertion methods
+* Specs call page methods only. They do not call `expect` on locators or on values read from the screen
 
 #### 2- Project structure adjustment to modules
 * Dividing the project into pages, components, fixtures, data, helpers, and setup
@@ -195,6 +196,7 @@ Common scripts:
 
 #### 8- GitHub Actions
 * GitHub-hosted and self-hosted E2E workflows under `.github/workflows`
+* Self-hosted jobs stay opt-in: set the repository variable `SELF_HOSTED_E2E=true` after the Mac runner is registered, or run that workflow with `workflow_dispatch`
 
 Web-only items from the Playwright twin project that do **not** apply here: Report Portal, multi-ENV ST/SIT URL matrices, REST API specs, visual snapshot baselines for browsers.
 
@@ -409,9 +411,11 @@ PageObject Class (extends BasePage)
 │   ├── loginAs(user) / addToCart()  (business actions preferred)
 │   └── navigate helpers returning the next page
 │
-└── Assertion Helpers (locators exposed for expect in specs)
-    ├── assert{Element}Exist() pattern via expect(locator).toBeVisible()
-    └── errorMessage(text) / productTitle(product) for dynamic text
+└── Assertion Methods (expect stays inside the page)
+    ├── expectProductVisible(product) / expectPrice(price)
+    ├── expectErrorVisible(message)
+    ├── expectEmpty() / expectItemVisible(product)
+    └── expectItemCount(count) / expectTotalCloseTo(expected)
 ```
 
 ### **Test Case AAA Pattern:**
@@ -430,7 +434,7 @@ Test Case Structure
 │   └── Cross-screen journeys via returned page objects
 │
 └── Assert (Verify)
-    ├── Check expected results with MobileWright expect
+    ├── Call page assertion methods (expect stays inside the page)
     ├── Verify screen state
     └── Validate data (prices, counts, errors)
 ```
@@ -445,9 +449,11 @@ Test Case Structure
 
 * Every test should have its representative name
 
-* Pages should hold locators, strings/actions, and expose assertion locators
+* Pages hold locators, a constructor, action methods, and assertion methods
 
-* Assertions use MobileWright `expect` (auto-waiting)
+* Specs call those page methods only. Do not write `expect(locator...)` or `expect(await page.totalPrice())` in a spec
+
+* Assertion methods use MobileWright `expect` (auto-waiting) inside the page class
 
 * Files and folders should be named with this format `{firstWord-secondWord..}` (kebab-case for multi-word files)
 
@@ -509,12 +515,19 @@ https://mobilewright.dev/docs/getting-started/writing-tests
 
 * **Assertions / Validations / Verifications**
 
-* *Assertions should be as the below format*
+* *Assertions live on the page and are called from the spec*
 
-        - Assert on element visibility: await expect(locator).toBeVisible()  ≈ assert{Element}Exist()
-        - Assert Element not exist: await expect(locator).toBeHidden() / not.toBeVisible()
-        - Assert on element enabled: await expect(locator).toBeEnabled()
-        - Assert on Element text: await expect(locator).toHaveText(...)
+        await catalog.expectProductVisible(products.backpack);
+        await login.expectErrorVisible(loginErrors.usernameRequired);
+        await cart.expectEmpty();
+        await cart.expectItemVisible(products.backpack);
+        await cart.expectItemCount(1);
+        await cart.expectTotalCloseTo(expected);
+        await details.expectProductVisible(product);
+        await details.expectPrice(product.price);
+
+        - The page method wraps MobileWright `expect` (`toBeVisible`, `toHaveText`, `toBeCloseTo`, …)
+        - Specs do not import `expect` for UI checks
         - Prefer asserting at the end of the case (AAA)
 
 * **Test cases**

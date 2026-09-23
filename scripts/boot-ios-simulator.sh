@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Boots an iPhone simulator and waits until it is ready. MobileWright never boots devices itself.
-#
-#   scripts/boot-ios-simulator.sh                           # reuse a booted iPhone, else newest runtime's first iPhone
-#   IOS_SIMULATOR="iPhone 16" scripts/boot-ios-simulator.sh  # exact simulator name
 set -euo pipefail
 
 requested="${IOS_SIMULATOR:-}"
+
+# Prefer the hardware keyboard so the software keyboard does not cover Login on CI.
+osascript -e 'quit app "Simulator"' >/dev/null 2>&1 || true
+sleep 1
+defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool true
+
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOBILECLI="${ROOT_DIR}/node_modules/@mobilenext/mobilecli-darwin-arm64/mobilecli-darwin-arm64"
@@ -29,7 +31,6 @@ if [[ -z "${requested}" ]] && xcrun simctl list devices booted | grep -qE '^\s+i
   exit 0
 fi
 
-# Picks from the newest iOS runtime first: `IOS_SIMULATOR` by exact name, otherwise the first iPhone.
 udid="$(xcrun simctl list devices available --json | node -e '
   const requested = process.argv[1];
   const { devices } = JSON.parse(require("fs").readFileSync(0, "utf8"));

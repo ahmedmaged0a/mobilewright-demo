@@ -1,7 +1,6 @@
 import { products } from '../src/data/products.ts';
-import { expect, test } from '../src/fixtures/index.ts';
+import { test } from '../src/fixtures/index.ts';
 import { allure, Severity } from '../src/helpers/reporting.ts';
-import { formatPrice } from '../src/helpers/text.ts';
 
 test.describe('Catalog', { annotation: [allure.epic('Shopping'), allure.feature('Catalog')] }, () => {
   test(
@@ -11,7 +10,7 @@ test.describe('Catalog', { annotation: [allure.epic('Shopping'), allure.feature(
       annotation: [allure.story('Browse products'), allure.severity(Severity.BLOCKER)],
     },
     async ({ catalogPage }) => {
-      await expect(catalogPage.productTitle(products.backpack)).toBeVisible();
+      await catalogPage.expectProductVisible(products.backpack);
     },
   );
 
@@ -25,8 +24,8 @@ test.describe('Catalog', { annotation: [allure.epic('Shopping'), allure.feature(
       async ({ catalogPage }) => {
         const details = await catalogPage.openProduct(product);
 
-        await expect(details.productTitle(product)).toBeVisible();
-        await expect(details.price_lbl).toHaveText(formatPrice(product.price));
+        await details.expectProductVisible(product);
+        await details.expectPrice(product.price);
       },
     );
   }

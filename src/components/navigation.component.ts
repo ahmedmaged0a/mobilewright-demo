@@ -4,7 +4,6 @@ import { LoginPage } from '../pages/login.page.ts';
 import { step } from '../helpers/reporting.ts';
 import { BaseComponent } from './base.component.ts';
 
-/** App-wide navigation: a header with a drawer menu on Android, a bottom tab bar on iOS. */
 export class NavigationComponent extends BaseComponent {
   private readonly cart_btn = this.select({
     android: (screen) => screen.getByLabel('View cart'),
@@ -18,11 +17,9 @@ export class NavigationComponent extends BaseComponent {
 
   private readonly login_mnu = this.select({
     android: (screen) => screen.getByLabel('Login Menu Item'),
-    // The iOS item keeps its "LogOut" identifier while logged out; its visible label reads "Login".
     ios: (screen) => screen.getByTestId('LogOut-menu-item'),
   });
 
-  // Navigation is usually the first interaction after launch, so it may wait for the first render.
   async tapCartBtn(): Promise<void> {
     await this.cart_btn.tap({ timeout: NavigationComponent.screenTimeout });
   }
@@ -42,14 +39,21 @@ export class NavigationComponent extends BaseComponent {
       } else {
         await this.screen.getByTestId('Catalog-tab-item').tap({ timeout: NavigationComponent.screenTimeout });
       }
-      return new CatalogPage(this.screen, this.platform).waitUntilLoaded();
+      const catalog = await new CatalogPage(this.screen, this.platform).waitUntilLoaded();
+      if (this.platform === 'android') {
+        // Recycled lists keep scroll offset after returning from details — reset to the top.
+        for (let i = 0; i < 3; i += 1) {
+          await this.screen.swipe('down', { duration: 300 });
+        }
+      }
+      return catalog;
     });
   }
 
   async openLogin(): Promise<LoginPage> {
     return step('Open login', async () => {
       await this.menu_btn.tap({ timeout: NavigationComponent.screenTimeout });
-      await this.login_mnu.scrollIntoViewIfNeeded();
+      await this.reveal(this.login_mnu);
       await this.login_mnu.tap();
       return new LoginPage(this.screen, this.platform).waitUntilLoaded();
     });

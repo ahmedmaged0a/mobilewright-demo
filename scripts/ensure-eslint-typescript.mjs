@@ -1,9 +1,4 @@
 #!/usr/bin/env node
-/**
- * @typescript-eslint/parser (via typescript-estree) does not support TypeScript 7 yet.
- * This project keeps TypeScript 7 for `tsc`, and nests TypeScript 5.9 under
- * typescript-estree so `npm run lint` can parse `.ts` files.
- */
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';

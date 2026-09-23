@@ -1,8 +1,10 @@
+import { expect } from '@mobilewright/test';
 import type { Locator } from 'mobilewright';
 import type { Product } from '../data/products.ts';
 import { androidId } from '../helpers/android.ts';
+import type { PerPlatform } from '../helpers/platform.ts';
 import { step } from '../helpers/reporting.ts';
-import { parsePrice } from '../helpers/text.ts';
+import { formatItemCount, parsePrice } from '../helpers/text.ts';
 import { BasePage } from './base.page.ts';
 import { CatalogPage } from './catalog.page.ts';
 
@@ -10,22 +12,19 @@ export class CartPage extends BasePage {
   protected readonly screenName = 'Cart';
 
   protected readonly loadedIndicator = this.select({
-    // The Android cart swaps its whole layout when empty, so either state proves the screen is shown.
     android: (screen) => screen.getByText('My Cart').or(screen.getByText('No Items')),
     ios: (screen) => screen.getByTestId('Cart-screen'),
   });
 
-  readonly emptyCart_lbl = this.screen.getByText('No Items');
+  private readonly emptyCart_lbl = this.screen.getByText('No Items');
 
-  /** Renders `<n> Items` on both platforms. */
-  readonly itemCount_lbl = this.select({
+  private readonly itemCount_lbl = this.select({
     android: (screen) => screen.getByTestId(androidId('itemsTV')),
     ios: (screen) => screen.getByText(/^\d+ Items$/),
   });
 
   private readonly totalPrice_lbl = this.select({
     android: (screen) => screen.getByTestId(androidId('totalPriceTV')),
-    // iOS renders the total as `$59.98`, without the space its item prices have, and gives it no id.
     ios: (screen) => screen.getByText(/^\$\d+\.\d{2}$/),
   });
 
@@ -36,11 +35,34 @@ export class CartPage extends BasePage {
     ios: (screen) => screen.getByTestId('GoShopping'),
   });
 
-  item(product: Product): Locator {
+  private item(product: Product): Locator {
     return this.screen.getByText(this.pick(product.name));
   }
 
-  async totalPrice(): Promise<number> {
+  async expectEmpty(): Promise<void> {
+    await step('Expect cart to be empty', () => expect(this.emptyCart_lbl).toBeVisible());
+  }
+
+  async expectItemVisible(product: Product): Promise<void> {
+    await step(`Expect "${this.pick(product.name)}" in the cart`, () =>
+      expect(this.item(product)).toBeVisible(),
+    );
+  }
+
+  async expectItemCount(count: number): Promise<void> {
+    await step(`Expect cart count ${formatItemCount(count)}`, () =>
+      expect(this.itemCount_lbl).toHaveText(formatItemCount(count)),
+    );
+  }
+
+  async expectTotalCloseTo(expected: number | PerPlatform<number>): Promise<void> {
+    const amount = typeof expected === 'number' ? expected : this.pick(expected);
+    await step(`Expect cart total close to ${amount}`, async () => {
+      expect(await this.totalPrice()).toBeCloseTo(amount, 2);
+    });
+  }
+
+  private async totalPrice(): Promise<number> {
     return step('Read cart total', async () => parsePrice(await this.totalPrice_lbl.getText()));
   }
 
