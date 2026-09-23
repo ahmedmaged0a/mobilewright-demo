@@ -61,34 +61,36 @@ Verify the host before installing apps or running tests:
 
         # iOS — boot simulator + install mobilecli agent, then run
         bash scripts/boot-ios-simulator.sh
-        npm run test:ios
+        npx mobilewright test --project=ios
 
         # Android — boot emulator, then run
         bash scripts/boot-android-emulator.sh
-        npm run test:android
+        npx mobilewright test --project=android
 
 ## `How to run?`
 
 ### A. Running normal test cases:
 
-#### 1- Use direct command as below (runs both `ios` and `android` projects):
+Official CLI commands from [Mobilewright docs](https://mobilewright.dev/docs/):
+
+#### 1- Run all projects:
 
         npx mobilewright test
 
 #### 2- Run a single platform:
 
-        npm run test:android
-        npm run test:ios
+        npx mobilewright test --project=android
+        npx mobilewright test --project=ios
 
 #### 3- Show the MobileWright HTML report:
 
-        npm run report:html
+        npx mobilewright show-report
 
 #### 4- Device / app overrides via environment (see `.env.example`):
 
-        ANDROID_DEVICE_NAME='Pixel 8' npm run test:android
-        IOS_DEVICE_NAME='iPhone 16' npm run test:ios
-        SKIP_APP_INSTALL=1 npm run test:android
+        ANDROID_DEVICE_NAME='Pixel 8' npx mobilewright test --project=android
+        IOS_DEVICE_NAME='iPhone 16' npx mobilewright test --project=ios
+        SKIP_APP_INSTALL=1 npx mobilewright test --project=android
 
         # Supported project names: ios | android
         # App paths default to apps/android/my-demo-app.apk and apps/ios/my-demo-app-simulator.zip
@@ -98,20 +100,35 @@ Verify the host before installing apps or running tests:
 
         npm run {predefined command}
 
-Common scripts:
+Official Mobilewright CLI (see https://mobilewright.dev/):
+
+| Command | Purpose |
+| --- | --- |
+| `npx mobilewright doctor` | Verify Node, mobilecli, Xcode/Android SDK |
+| `npx mobilewright devices` | List attached / booted devices |
+| `npx mobilewright test` | Run all projects |
+| `npx mobilewright test --project=android` / `--project=ios` | Single platform |
+| `npx mobilewright test --grep @sanity` | Filter by tag (`@ui`, `@smoke`, `@regression`, `@e2e`, …) |
+| `npx mobilewright test tests/login.spec.ts` | Single feature spec |
+| `npx mobilewright test --list` | List tests without executing |
+| `npx mobilewright show-report` | Open MobileWright HTML report |
+
+Project convenience scripts (same as above, plus extras):
 
 | Script | Purpose |
 | --- | --- |
-| `npm run doctor` | Verify Node, mobilecli, Xcode/Android SDK |
-| `npm run devices` | List attached / booted devices |
+| `npm run doctor` | → `mobilewright doctor` |
+| `npm run devices` | → `mobilewright devices` |
 | `npm run apps:fetch` | Download My Demo App APK + iOS simulator zip |
-| `npm run test` | Run all projects |
-| `npm run test:android` / `test:ios` | Single platform |
-| `npm run test:list` | List tests without executing |
+| `npm run test` | → `mobilewright test` |
+| `npm run test:android` / `test:ios` | → `mobilewright test --project=…` |
+| `npm run test:ui` / `test:sanity` / `test:smoke` / `test:regression` / `test:e2e` | Tag filters for business groups |
+| `npm run test:login` / `test:catalog` / `test:cart` | Feature specs under `tests/` |
+| `npm run test:list` | → `mobilewright test --list` |
 | `npm run typecheck` | TypeScript static check |
 | `npm run lint` | ESLint static analysis |
-| `npm run report:html` | Open MobileWright HTML report |
-| `npm run allure:generate` / `allure:open` | Build and open Allure report (single `allure-report/index.html`) |
+| `npm run report:html` | → `mobilewright show-report` |
+| `npm run allure:generate` / `allure:open` | Build and open Allure report |
 
 ### C. Generating / Opening Allure report:
 
@@ -128,7 +145,6 @@ Common scripts:
 #### 1- Run ESLint command:
 
         npm run lint
-        npx eslint {file path}
 
 ## `Features:`
 

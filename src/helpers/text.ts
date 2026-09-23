@@ -1,3 +1,5 @@
+import { cartCopy } from '../data/copy.ts';
+
 export function formatPrice(amount: number): string {
   return `$ ${amount.toFixed(2)}`;
 }
@@ -11,5 +13,5 @@ export function parsePrice(text: string): number {
 }
 
 export function formatItemCount(count: number): string {
-  return `${count} Items`;
+  return `${count} ${cartCopy.itemCountSuffix}`;
 }

@@ -1,5 +1,6 @@
 import { expect } from '@mobilewright/test';
 import type { Locator } from 'mobilewright';
+import { cartCopy, itemCountPattern } from '../data/copy.ts';
 import type { Product } from '../data/products.ts';
 import { androidId } from '../helpers/android.ts';
 import type { PerPlatform } from '../helpers/platform.ts';
@@ -11,16 +12,21 @@ import { CatalogPage } from './catalog.page.ts';
 export class CartPage extends BasePage {
   protected readonly screenName = 'Cart';
 
+  // --- Locators ---
+
   protected readonly loadedIndicator = this.select({
-    android: (screen) => screen.getByText('My Cart').or(screen.getByText('No Items')),
+    android: (screen) => screen.getByText(cartCopy.title).or(screen.getByText(cartCopy.empty)),
     ios: (screen) => screen.getByTestId('Cart-screen'),
   });
 
-  private readonly emptyCart_lbl = this.screen.getByText('No Items');
+  private readonly emptyCart_lbl = this.select({
+    android: (screen) => screen.getByText(cartCopy.empty),
+    ios: (screen) => screen.getByText(cartCopy.empty),
+  });
 
   private readonly itemCount_lbl = this.select({
     android: (screen) => screen.getByTestId(androidId('itemsTV')),
-    ios: (screen) => screen.getByText(/^\d+ Items$/),
+    ios: (screen) => screen.getByText(itemCountPattern),
   });
 
   private readonly totalPrice_lbl = this.select({
@@ -28,16 +34,21 @@ export class CartPage extends BasePage {
     ios: (screen) => screen.getByText(/^\$\d+\.\d{2}$/),
   });
 
-  private readonly removeItem_btn = this.screen.getByText('Remove Item');
+  private readonly removeItem_btn = this.select({
+    android: (screen) => screen.getByText(cartCopy.removeItem),
+    ios: (screen) => screen.getByText(cartCopy.removeItem),
+  });
 
   private readonly goShopping_btn = this.select({
     android: (screen) => screen.getByTestId(androidId('shoppingBt')),
     ios: (screen) => screen.getByTestId('GoShopping'),
   });
 
-  private item(product: Product): Locator {
+  private item_lbl(product: Product): Locator {
     return this.screen.getByText(this.pick(product.name));
   }
+
+  // --- Assertions ---
 
   async expectEmpty(): Promise<void> {
     await step('Expect cart to be empty', () => expect(this.emptyCart_lbl).toBeVisible());
@@ -45,7 +56,7 @@ export class CartPage extends BasePage {
 
   async expectItemVisible(product: Product): Promise<void> {
     await step(`Expect "${this.pick(product.name)}" in the cart`, () =>
-      expect(this.item(product)).toBeVisible(),
+      expect(this.item_lbl(product)).toBeVisible(),
     );
   }
 
@@ -58,13 +69,11 @@ export class CartPage extends BasePage {
   async expectTotalCloseTo(expected: number | PerPlatform<number>): Promise<void> {
     const amount = typeof expected === 'number' ? expected : this.pick(expected);
     await step(`Expect cart total close to ${amount}`, async () => {
-      expect(await this.totalPrice()).toBeCloseTo(amount, 2);
+      expect(parsePrice(await this.totalPrice_lbl.getText())).toBeCloseTo(amount, 2);
     });
   }
 
-  private async totalPrice(): Promise<number> {
-    return step('Read cart total', async () => parsePrice(await this.totalPrice_lbl.getText()));
-  }
+  // --- Actions ---
 
   async tapRemoveItemBtn(): Promise<void> {
     await this.removeItem_btn.first().tap();

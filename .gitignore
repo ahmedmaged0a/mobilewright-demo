@@ -22,3 +22,7 @@ node_modules/
 # os / editor
 .DS_Store
 *.log
+
+# local scratch
+tmp-ui.xml
+*.patch
