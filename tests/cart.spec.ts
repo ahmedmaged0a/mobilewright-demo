@@ -4,14 +4,26 @@ import { allure, attachScreenshot, Severity } from '../src/helpers/reporting.ts'
 
 test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Cart')] }, () => {
   test(
-    'Check that empty cart leads back to the catalog when go shopping is tapped',
+    'Check that empty cart is shown when cart is opened with no items',
     {
       tag: ['@ui', '@regression'],
       annotation: [allure.story('Empty cart'), allure.severity(Severity.NORMAL)],
     },
     async ({ navigation }) => {
       const cart = await navigation.openCart();
+
       await cart.expectEmpty();
+    },
+  );
+
+  test(
+    'Check that catalog is shown when go shopping is tapped from an empty cart',
+    {
+      tag: ['@ui', '@regression'],
+      annotation: [allure.story('Empty cart'), allure.severity(Severity.NORMAL)],
+    },
+    async ({ navigation }) => {
+      const cart = await navigation.openCart();
 
       const catalog = await cart.goShopping();
 
@@ -44,19 +56,17 @@ test.describe('Cart', { annotation: [allure.epic('Shopping'), allure.feature('Ca
       annotation: [allure.story('Cart total'), allure.severity(Severity.CRITICAL)],
     },
     async ({ catalogPage, navigation }) => {
-      const basket = [products.backpack, products.companion];
-      let catalog = catalogPage;
-      for (const product of basket) {
-        const details = await catalog.openProduct(product);
-        await details.addToCart();
-        catalog = await navigation.openCatalog();
-      }
+      const backpackDetails = await catalogPage.openProduct(products.backpack);
+      await backpackDetails.addToCart();
+      const catalog = await navigation.openCatalog();
+      const companionDetails = await catalog.openProduct(products.companion);
+      await companionDetails.addToCart();
 
       const cart = await navigation.openCart();
-      const expected = totalOf(basket);
+      const basket = [products.backpack, products.companion];
 
       await cart.expectItemCount(basket.length);
-      await cart.expectTotalCloseTo(expected);
+      await cart.expectTotalCloseTo(totalOf(basket));
     },
   );
 
